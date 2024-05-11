@@ -10,7 +10,7 @@ COPY . .
 WORKDIR /app/cmd
 RUN go build -o main .
 
-# EXPOSE 443
-# EXPOSE 80
+# EXPOSE 8444
+# EXPOSE 8090
 
 CMD ["./main"]
