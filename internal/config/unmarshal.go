@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"strings"
-	"time"
+
 )
 
 // UnmarshalYAML custom unmarshalling for Environment.
@@ -55,37 +55,4 @@ func (r *RotationPolicy) UnmarshalYAML(unmarshal func(interface{}) error) error 
 	}
 }
 
-// UnmarshalYAML for Config to handle custom types directly
-func (c *Config) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	// Define auxiliary type to avoid recursion
-	type plain Config
-	if err := unmarshal((*plain)(c)); err != nil {
-		return err
-	}
 
-	// Temporary structure to hold the string values for parsing
-	var temp struct {
-		DefaultTimeout string `yaml:"defaultTimeout"`
-		LongTimeout    string `yaml:"longTimeout"`
-	}
-
-	if err := unmarshal(&temp); err != nil {
-		return err
-	}
-
-	
-	defaultTimeout, err := time.ParseDuration(temp.DefaultTimeout)
-	if err != nil {
-		return fmt.Errorf("invalid format for DefaultTimeout: %v", err)
-	}
-	c.ProxyConfig.DefaultTimeout = defaultTimeout
-
-
-	longTimeout, err := time.ParseDuration(temp.LongTimeout)
-	if err != nil {
-		return fmt.Errorf("invalid format for LongTimeout: %v", err)
-	}
-	c.ProxyConfig.LongTimeout = longTimeout
-
-	return nil
-}

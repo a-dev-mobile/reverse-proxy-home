@@ -11,51 +11,52 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-
 func main() {
+	cfg, logger := initializeApp()
 
-	cfg, lg := initializeApp()
-
-	// Мультиплексор для маршрутизации
 	mux := http.NewServeMux()
-	// Обработчики для каждого домена
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		host := r.Host
-		// Удаление порта из хоста, если он есть
-		if strings.Contains(host, ":") {
-			host = strings.Split(host, ":")[0]
-		}
-
-		switch host {
-		// https://wayofdt.com:8444/
-		// http://wayofdt.com:8090/
-		case "wayofdt.com":
-			handleMainDomain(w, r)
-		// https://subdomain1.wayofdt.com:8444/
-		// http://subdomain1.wayofdt.com:8090/
-		case "subdomain1.wayofdt.com":
-			handleSubdomain1(w, r)
-		// https://subdomain2.wayofdt.com:8444/
-		// http://subdomain2.wayofdt.com:8090/
-		case "subdomain2.wayofdt.com":
-			handleSubdomain2(w, r)
-		default:
-			http.NotFound(w, r)
-		}
+		handleRequest(logger, cfg, w, r)
 	})
 
-	// HTTP-сервер
+	startHTTPServer(cfg, mux, logger)
+	startHTTPSServer(cfg, mux, logger)
+}
+
+func handleRequest(logger *slog.Logger, cfg *config.Config, w http.ResponseWriter, r *http.Request) {
+	host := strings.Split(r.Host, ":")[0]
+	logger.Info("Request received", "host", host, "path", r.URL.Path)
+
+	switch host {
+	// https://wayofdt.com:8444/
+	// http://wayofdt.com:8090/
+	case "wayofdt.com":
+		handleMainDomain(w, r)
+	// https://subdomain1.wayofdt.com:8444/
+	// http://subdomain1.wayofdt.com:8090/
+	case "subdomain1.wayofdt.com":
+		handleSubdomain1(w, r)
+	// https://subdomain2.wayofdt.com:8444/
+	// http://subdomain2.wayofdt.com:8090/
+	case "subdomain2.wayofdt.com":
+		handleSubdomain2(w, r)
+	default:
+		http.NotFound(w, r)
+	}
+}
+func startHTTPServer(cfg *config.Config, handler http.Handler, logger *slog.Logger) {
 	go func() {
-		log.Println("Starting HTTP server on :8090")
-		if err := http.ListenAndServe(":8090", mux); err != nil {
-			log.Fatal("HTTP server failed: ", err)
+		logger.Info("Starting HTTP server", slog.String("port", cfg.ProxyConfig.HTTPPort))
+		if err := http.ListenAndServe(cfg.ProxyConfig.HTTPPort, handler); err != nil {
+			logger.Error("HTTP server failed", "error", err)
 		}
 	}()
+}
 
-	// HTTPS-сервер
-	log.Println("Starting HTTPS server on :8444")
-	if err := http.ListenAndServeTLS(":8444", `c:\1\wayofdt.com.crt`, `c:\1\wayofdt.com.key`, mux); err != nil {
-		log.Fatal("HTTPS server failed: ", err)
+func startHTTPSServer(cfg *config.Config, handler http.Handler, logger *slog.Logger) {
+	logger.Info("Starting HTTPS server", slog.String("port", cfg.ProxyConfig.HTTPSPort))
+	if err := http.ListenAndServeTLS(cfg.ProxyConfig.HTTPSPort, cfg.ProxyConfig.CertFile, cfg.ProxyConfig.KeyFile, handler); err != nil {
+		logger.Error("HTTPS server failed", "error", err)
 	}
 }
 
@@ -72,8 +73,6 @@ func handleMainDomain(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("This is wayofdt.com"))
 }
 
-
-
 func initializeApp() (*config.Config, *slog.Logger) {
 
 	cfg := getConfigOrFail()
@@ -83,10 +82,9 @@ func initializeApp() (*config.Config, *slog.Logger) {
 	return cfg, lg
 }
 
-
 func getConfigOrFail() *config.Config {
 
-	cfg, err := config.LoadConfig("../config","config.yaml")
+	cfg, err := config.LoadConfig("../config", "config.yaml")
 
 	if err != nil {
 		log.Fatalf("Error loading config: %s", err)

@@ -2,7 +2,7 @@ package config
 
 import (
 	"errors"
-	"time"
+
 
 	// Errors package for handling errors.
 	"fmt"
@@ -23,8 +23,6 @@ type Config struct {
 	ProxyConfig ProxyConfig   `yaml:"proxyConfig"`
 }
 type ProxyConfig struct {
-	DefaultTimeout time.Duration `yaml:"defaultTimeout"`
-	LongTimeout    time.Duration `yaml:"longTimeout"`
 	HTTPPort       string        `yaml:"httpPort"`
 	HTTPSPort      string        `yaml:"httpsPort"`
 	CertFile       string        `yaml:"certFile"`
