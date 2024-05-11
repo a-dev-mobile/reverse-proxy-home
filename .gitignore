@@ -1,0 +1,9 @@
+__debug_bin*
+
+.vscode*
+
+
+config/config.dev.yaml
+config/config.prod.yaml
+config/config.yaml
+.env

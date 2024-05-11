@@ -1,0 +1,15 @@
+environment: "${APP_ENV}"
+
+logging:
+  level: debug 
+  fileOutput:
+    filePath: "" #
+    rotationPolicy: monthly
+    maxSizeMB: 500
+    maxBackups: 50
+
+bot_token: ":"
+alert_manager_url: ""
+polling_interval: 10s 
+telegram_chat_id: 
+repeat_notification_interval: 1m 
