@@ -27,17 +27,16 @@ func handleRequest(logger *slog.Logger, cfg *config.Config, w http.ResponseWrite
 	host := strings.Split(r.Host, ":")[0]
 	logger.Info("Request received", "host", host, "path", r.URL.Path)
 
+	// Проверка наличия перенаправления
+	if redirectURL, ok := cfg.ProxyConfig.Redirects[host]; ok {
+		http.Redirect(w, r, redirectURL, http.StatusPermanentRedirect)
+		return
+	}
 	switch host {
-	// https://wayofdt.com:8444/
-	// http://wayofdt.com:8090/
 	case "wayofdt.com":
 		handleMainDomain(w, r)
-	// https://subdomain1.wayofdt.com:8444/
-	// http://subdomain1.wayofdt.com:8090/
 	case "subdomain1.wayofdt.com":
 		handleSubdomain1(w, r)
-	// https://subdomain2.wayofdt.com:8444/
-	// http://subdomain2.wayofdt.com:8090/
 	case "subdomain2.wayofdt.com":
 		handleSubdomain2(w, r)
 	default:
@@ -59,7 +58,6 @@ func startHTTPSServer(cfg *config.Config, handler http.Handler, logger *slog.Log
 		logger.Error("HTTPS server failed", "error", err)
 	}
 }
-
 
 func handleSubdomain1(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("This is subdomain1.wayofdt.com"))

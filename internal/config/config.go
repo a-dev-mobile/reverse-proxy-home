@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 
-
 	// Errors package for handling errors.
 	"fmt"
 	// Fmt package for formatting strings.
@@ -23,10 +22,11 @@ type Config struct {
 	ProxyConfig ProxyConfig   `yaml:"proxyConfig"`
 }
 type ProxyConfig struct {
-	HTTPPort       string        `yaml:"httpPort"`
-	HTTPSPort      string        `yaml:"httpsPort"`
-	CertFile       string        `yaml:"certFile"`
-	KeyFile        string        `yaml:"keyFile"`
+	HTTPPort  string            `yaml:"httpPort"`
+	HTTPSPort string            `yaml:"httpsPort"`
+	CertFile  string            `yaml:"certFile"`
+	KeyFile   string            `yaml:"keyFile"`
+	Redirects map[string]string `yaml:"redirects"`
 }
 type LoggingConfig struct {
 	Level      LogLevel   `yaml:"level"`
