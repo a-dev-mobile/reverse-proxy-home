@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"strings"
 
+	"strings"
+    "net/http"
+    "net/http/httputil"
+    "net/url"
 	"github.com/a-dev-mobile/reverse-proxy-home/internal/config"
 	"github.com/a-dev-mobile/reverse-proxy-home/internal/logging"
 
@@ -24,24 +26,36 @@ func main() {
 }
 
 func handleRequest(logger *slog.Logger, cfg *config.Config, w http.ResponseWriter, r *http.Request) {
-	host := strings.Split(r.Host, ":")[0]
-	logger.Info("Request received", "host", host, "path", r.URL.Path)
+    host := strings.Split(r.Host, ":")[0]
+    logger.Info("Request received", "host", host, "path", r.URL.Path)
 
-	// Проверка наличия перенаправления
-	if redirectURL, ok := cfg.ProxyConfig.Redirects[host]; ok {
-		http.Redirect(w, r, redirectURL, http.StatusPermanentRedirect)
-		return
-	}
-	switch host {
-	case "wayofdt.com":
-		handleMainDomain(w, r)
-	case "subdomain1.wayofdt.com":
-		handleSubdomain1(w, r)
-	case "subdomain2.wayofdt.com":
-		handleSubdomain2(w, r)
-	default:
-		http.NotFound(w, r)
-	}
+    // Проверка наличия конфигурации прокси для хоста
+    if targetURL, ok := cfg.ProxyConfig.Redirects[host]; ok {
+        proxyURL, err := url.Parse(targetURL)
+        if err != nil {
+            logger.Error("Failed to parse proxy URL", "error", err)
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+            return
+        }
+        proxy := httputil.NewSingleHostReverseProxy(proxyURL)
+        proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+            logger.Error("Proxy error", "error", err)
+            http.Error(w, "Proxy Error", http.StatusBadGateway)
+        }
+        proxy.ServeHTTP(w, r)
+        return
+    }
+    // Обработка стандартных доменов
+    switch host {
+    case "wayofdt.com":
+        handleMainDomain(w, r)
+    case "subdomain1.wayofdt.com":
+        handleSubdomain1(w, r)
+    case "subdomain2.wayofdt.com":
+        handleSubdomain2(w, r)
+    default:
+        http.NotFound(w, r)
+    }
 }
 func startHTTPServer(cfg *config.Config, handler http.Handler, logger *slog.Logger) {
 	go func() {
