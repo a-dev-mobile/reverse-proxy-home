@@ -22,8 +22,9 @@ type Config struct {
 	ProxyConfig ProxyConfig   `yaml:"proxyConfig"`
 }
 type ProxyConfig struct {
-	HTTPPort  string            `yaml:"httpPort"`
-	HTTPSPort string            `yaml:"httpsPort"`
+	HTTPPort  int               `yaml:"httpPort"`
+	HTTPSPort int               `yaml:"httpsPort"`
+	ProxyURL  string            `yaml:"proxyURL"`
 	CertFile  string            `yaml:"certFile"`
 	KeyFile   string            `yaml:"keyFile"`
 	Redirects map[string]string `yaml:"redirects"`
